@@ -1,0 +1,1 @@
+  Será um software destinado a usuários que querem enviar redações para receber avaliação de administradores quanto a qualidade da linguagem dissertativa, descritiva, informativa e narrativa. Os administradores poderão enviar comentários para informar a base necessária para o texto da redação, além de acrescentar notas.
