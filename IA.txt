@@ -1,0 +1,92 @@
+Cauã - "PROJETO 3: BACKEND (API RESTful - Student Core) Nome: API de Gestão de Desempenho 
+e Redações Objetivo: Criar uma API que gerencie o perfil do aluno, receba os envios de 
+redação e forneça dados estatísticos de progresso. 📅 Cronograma e Sprints (Backend) 
+Mês 1: Identidade e Metas • Foco: O aluno precisa existir e ter um objetivo claro no sistema.
+• Entregáveis (Git): • [ ] Setup: Repo, venv, requirements.txt e conexão com Postgres. 
+• [ ] Tabela Users: Além de login/senha, adicionar campos de perfil: 
+target_course (Curso Alvo, ex: Medicina) e target_university (Universidade, ex: USP). 
+• [ ] Autenticação: Rotas /auth/register e /auth/login (JWT). 
+• [ ] Rota de Perfil: PUT /profile para o aluno atualizar sua meta ou foto de perfil. 
+Mês 2: O Core (Envio e Correção) • Foco: O fluxo principal: enviar redação e receber nota. 
+• Entregáveis (Git): 
+• [ ] Tabela Essays (Redações): Campos para título, tema, texto (ou url do arquivo) e status (Pendente, Corrigida). 
+• [ ] CRUD de Redações: • POST /essays: Aluno envia a redação. 
+• GET /essays: Lista todas as redações do aluno logado. 
+• [ ] Simulação de Correção: Criar uma rota (que seria usada pelo professor/admin) 
+PUT /essays/{id}/grade que insere a Nota Final e o Comentário. 
+• [ ] Validação: Impedir envio de redação com menos de 50 caracteres (regra de negócio). 
+Mês 3: Inteligência de Dados e Deploy • Foco: Mostrar ao aluno se ele está melhorando. 
+• Entregáveis (Git): • [ ] Rota de Dashboard: GET /dashboard/stats. 
+• Lógica: Deve retornar a Média Geral das notas e a Última Nota." 
+Para fazer as tabelas, eu decorei apenas as duas "Usuários: Nome, Senha, Curso Alvo, Universidade Redações: Titulo, Tema, Texto, 
+Status ", mas aonde entra as notas e esse tal de professore/admin?
+
+
+
+ChatGPT - A estrutura que você memorizou cobre apenas o mínimo (usuários e redações), mas ela não atende aos requisitos funcionais completos do projeto. Os requisitos mencionam nota, comentário da correção, status, perfil do aluno, e também que existe alguém que corrige (professor/admin).
+Logo, precisamos modelar essas entidades no banco.
+Abaixo segue o modelo completo, rigoroso e pronto para criação no Postgres.
+1. TABELA users
+Finalidade: Representa qualquer usuário do sistema: aluno, professor ou admin.
+O campo role resolve o problema do “professor/admin”.
+Campos essenciais:
+id (PK)
+name
+email (único)
+password_hash
+role → ENUM('student', 'teacher', 'admin')
+target_course (somente usado se usuário for aluno)
+target_university (idem)
+profile_photo_url (nullable)
+created_at
+Por que o role é necessário?
+A rota /essays/{id}/grade deve aceitar somente professor/admin, então é a tabela users que precisa armazenar esse tipo de perfil.
+    2. TABELA essays
+Finalidade: Redações enviadas pelos alunos.
+Campos essenciais:
+id (PK)
+student_id (FK → users.id, apenas users com role='student')
+title
+topic
+text ou file_url
+status → ENUM('pending', 'graded')
+created_at
+updated_at
+    3. TABELA essay_grades
+Finalidade: Aqui entram as notas e comentários, porque o requisito diz:
+“inserir a Nota Final e o Comentário”.
+Separar isso em outra tabela é a arquitetura mais limpa:
+Cada redação pode ser corrigida uma vez, mas no futuro pode ser necessário histórico, revisões, etc.
+Campos essenciais:
+id (PK)
+essay_id (FK → essays.id)
+graded_by (FK → users.id, apenas role teacher/admin)
+final_grade (NUMERIC ou INTEGER conforme a nota)
+comments (TEXT)
+graded_at
+Por que uma tabela separada?
+Porque:
+mantém rastreabilidade: quem corrigiu
+evita poluir a tabela principal
+facilita evoluções futuras (mais de uma correção por redação, histórico, rubricas etc.)
+    4. Como isso responde à sua dúvida?
+Onde entram as notas?
+Na tabela essay_grades:
+final_grade
+comments
+graded_at
+Onde entra o professor/admin?
+Na própria tabela users, usando o campo role.
+Um professor/admin corrige redações e, portanto, aparece no campo graded_by da tabela essay_grades.
+    5. Esquema completo resumido
+users
+CampoTipoObservaçõesidSERIAL PKnameVARCHARemailVARCHAR UNIQUEpassword_hashTEXTroleENUM(student, teacher, admin)target_courseVARCHARnullabletarget_universityVARCHARnullableprofile_photo_urlVARCHARnullablecreated_atTIMESTAMP
+essays
+CampoTipoObservaçõesidSERIAL PKstudent_idINT FK → users(id)titleVARCHARtopicVARCHARtextTEXTstatusENUM(pending, graded)created_atTIMESTAMPupdated_atTIMESTAMP
+essay_grades
+CampoTipoObservaçõesidSERIAL PKessay_idINT FK → essays(id)unique (1 correção por redação)graded_byINT FK → users(id)(teacher/admin)final_gradeNUMERIC(4,2)commentsTEXTgraded_atTIMESTAMP
+6. Dashboard
+A rota /dashboard/stats pega dados de:
+essay_grades.final_grade → média geral.
+essay_grades.graded_at ordenado → última nota.
+Se quiser, eu posso gerar o script SQL completo, incluindo criação de ENUMs, constraints e chaves estrangeiras. Quer que eu gere?
