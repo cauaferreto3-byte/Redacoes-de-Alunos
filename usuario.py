@@ -23,6 +23,25 @@ def cadastro():
     universidade = request.form.get("universidade")
     foto = request.form.get("foto")
 
+    if not email or email.endswith("@admin.com"):
+        return {"erro": "Informe um email de usuario!"}, 400
+
+    # Proíbe letras maiúsculas na parte local (antes do @)
+    local = email.split('@', 1)[0]
+    if any(ch.isupper() for ch in local):
+        return {"erro": "O email não pode conter letras maiúsculas antes do @."}, 400
+    
+    if not nome or not nome.strip():
+        return {"erro": "nome nao encontrado."}, 400
+    elif not senha or not senha.strip():
+        return {"erro": "senha nao encontrada."}, 400
+    elif not curso_alvo or not curso_alvo.strip():
+        return {"erro": "Infome seu objetivo de curso."}, 400
+    elif not universidade or universidade.strip():
+        return {"erro": "Universidade nao encontrada."}, 400
+    elif not foto or not foto.strip():
+        return {"erro": "URL da foto nao encontrada."}, 400
+
     #SQL
     sql = text("INSERT INTO usuario (nome, senha, email, curso_alvo, universidade, foto) VALUES (:nome, :senha, :email, :curso_alvo, :universidade, :foto) RETURNING id")
     dados = {"nome": nome, "senha": senha, "email": email, "curso_alvo": curso_alvo, "universidade": universidade, "foto": foto} #os dados do que veio lá da var sql
@@ -57,6 +76,9 @@ def login():
 @usuario_bp.route("/profile/<id>", methods=["PUT"])
 def atualizar_foto(id):
     foto = request.form.get("foto")
+
+    if not foto or not foto.strip():
+        return {"erro": "URL da foto nao encontrada ou corrompida."}, 400
     
     sql = text("UPDATE usuario SET foto = :foto WHERE id = :id")
     dados = {"foto": foto, "id": id}

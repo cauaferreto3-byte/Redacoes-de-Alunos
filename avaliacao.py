@@ -14,8 +14,16 @@ def inserirAvaliacao():
     data_avaliacao = request.form.get("data_avaliacao")
     id_adm = request.form.get("id_adm")
 
-    if not id_redacao or not id_adm:
-        return "Falha ao tentar identificar a redacao/avaliador."
+    if not nota_final or not nota_final.strip():
+        return "Nota nao encontrada."
+    if not comentario or not comentario.strip():
+        return "Comentario inexistente"
+    if not data_avaliacao or not data_avaliacao.strip():
+        return "Falha ao procurar a data da avaliacao"
+    if not id_redacao or not id_redacao.strip():
+        return "Falha ao tentar identificar a redacao."
+    if not id_adm or not id_adm.strip():
+       return "Avaliador nao identificado." 
 
     sql = text("INSERT INTO avaliacao(nota_final, id_redacao, comentario, data_avaliacao, id_adm) VALUES (:nota_final, :id_redacao, :comentario, :data_avaliacao, :id_adm)")
     dados = { "nota_final": nota_final, 
@@ -70,6 +78,23 @@ def update(id):
     data_avaliacao = request.form.get("data_avaliacao")
     id_redacao = request.form.get("id_redacao")
     id_adm = request.form.get("id_adm")
+
+    # Verifica se a avaliacao com o id existe
+    exists_sql = text("SELECT 1 FROM avaliacao WHERE id = :id")
+    exists = db.session.execute(exists_sql, {"id": id}).first()
+    if not exists:
+        return {"erro": f"Avaliacao com id {id} nao encontrado."}, 404
+
+    if not nota_final or not nota_final.strip():
+        return "Falta da nota explicita."
+    if not comentario or not comentario.strip():
+        return "Comentario inexistente. Informe dicas ao aluno."
+    if not data_avaliacao or not data_avaliacao.strip():
+        return "Falha ao procurar a data da avaliacao, digite logo a seguir."
+    if not id_redacao or not id_redacao.strip():
+        return "Diga qual a redacao que esta sendo avaliada."
+    if not id_adm or not id_adm.strip():
+       return "Avaliador não informado." 
 
     sql = text("UPDATE avaliacao SET nota_final = :nota_final, comentario = :comentario, data_avaliacao = :data_avaliacao, id_redacao = :id_redacao, id_adm = :id_adm WHERE id = :id") 
     dados = {"nota_final": nota_final, "comentario": comentario, "data_avaliacao": data_avaliacao, "id_redacao": id_redacao, "id_adm": id_adm, "id": id}

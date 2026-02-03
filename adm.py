@@ -11,17 +11,25 @@ def criar_adm():
     senha = request.form.get("senha")
     log_atividade = request.form.get("log_atividade")
 
-    sql = text("INSERT INTO adm (nome, email, senha, log_atividade) VALUES (:nome, :email, :senha:, :log_atividade)")
+    if not nome or not nome.strip():
+        return {"erro": "Informe seu nome."}, 400
+    elif not senha or not senha.strip():
+        return {"erro": "Senha nula, digite-a."}, 400
+    
+    # Valida email: domínio e ausência de maiúsculas na parte local
+    if not email or not email.endswith("@admin.com"):
+        return "Email inválido para um admin."
+
+    local = email.split('@', 1)[0]
+    if any(ch.isupper() for ch in local):
+        return {"erro": "O email não pode conter letras maiúsculas antes do @."}, 400
+
+    sql = text("INSERT INTO adm (nome, email, senha, log_atividade) VALUES (:nome, :email, :senha, :log_atividade)")
     dados = {"nome": nome, "email": email, "senha": senha, "log_atividade": log_atividade}
     db.session.execute(sql, dados)
+    db.session.commit()
 
-    if email.endswith() == '@admin.com':
-        db.session.commit()
-        return dados
-        #return "Conta criada!"
-    else:
-        db.session.rollback()
-        return "Email inválido para um admin."
+    return dados
     
 
 @adm_bp.route('/getOne/<id>')
@@ -64,20 +72,39 @@ def updateADM(id):
     senha = request.form.get("senha")
     log_atividade = request.form.get("log_atividade")
 
+    # Verifica se o administrador com o id existe
+    exists_sql = text("SELECT 1 FROM adm WHERE id = :id")
+    exists = db.session.execute(exists_sql, {"id": id}).first()
+    if not exists:
+        return {"erro": f"Administrador com id {id} não encontrado."}, 404
+
+    if not email or not email.endswith("@admin.com"):
+        return {"erro": "Informe um email legítimo de administrador!"}, 400
+
+    # Proíbe letras maiúsculas na parte local (antes do @)
+    local = email.split('@', 1)[0]
+    if any(ch.isupper() for ch in local):
+        return {"erro": "O email não pode conter letras maiúsculas antes do @."}, 400
+    
+    if not nome or not nome.strip():
+        return {"erro": "Informe seu nome."}, 400
+    elif not senha or not senha.strip():
+        return {"erro": "Digite sua senha."}, 400
+
     sql = text("UPDATE adm SET nome = :nome, email = :email, senha = :senha, log_atividade = :log_atividade WHERE id = :id") 
     dados = {"nome": nome, "email": email, "senha": senha, "log_atividade": log_atividade, "id": id}
 
     result = db.session.execute(sql, dados)
 
     linhas_afetadas = result.rowcount #conta quantas linhas foram afetadas
-    
+   
     if linhas_afetadas == 1: 
         db.session.commit()
         return f"Administrador com o id:{id} atualizado!"
     else:
         db.session.rollback()
         return f"problemas ao atualizar dados"
-
+ 
 @adm_bp.route('/delete/<id>', methods=["DELETE"])
 def delete_adm(id):
     sql = text("DELETE FROM adm WHERE id = :id")

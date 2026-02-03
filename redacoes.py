@@ -17,7 +17,12 @@ def criarRedacao():
     # Validação: texto deve ter no mínimo 50 caracteres
     if not texto or len(texto) < 50:
         return {"erro": "O texto deve ter no mínimo 50 caracteres"}, 400
-
+    
+    if not tema or not tema.strip():
+       return "Tematica inexistente."
+    if not id_aluno or not id_aluno.strip():
+       return "Aluno perdido ou inexistente."
+    
     sql = text("INSERT INTO redacoes(titulo, tema, texto, status, id_aluno) VALUES (:titulo, :tema, :texto, :status, :id_aluno)")
     dados = {"titulo": titulo, "tema": tema, "texto": texto, "status": status, "id_aluno": id_aluno}
 
@@ -65,9 +70,23 @@ def update(id):
     tema = request.form.get("tema")
     texto = request.form.get("texto")
     status = request.form.get("status")
+#sem o campo id_aluno pois a redação criada por um aluno não pode ser trocado por outro aluno, cada um tem a sua própria redação feita pelo create.
+
+    # Verifica se a redacao com o id existe
+    exists_sql = text("SELECT 1 FROM redacoes WHERE id = :id")
+    exists = db.session.execute(exists_sql, {"id": id}).first()
+    if not exists:
+        return {"erro": f"Administrador com id {id} não encontrado."}, 404
+
+    if not titulo or not titulo.strip():
+        return "Correção precisa de titulo para a redacao"
+    if not tema or not tema.strip():
+       return "Tematica inexistente."
+    if not texto or len(texto) < 50:
+        return {"erro": "O texto deve ter no mínimo 50 caracteres"}, 400
 
     # Validação: proibir renomear ou permanecer status como "Pendente"
-    if status == "Pendente":
+    if not status or status == "Pendente":
         return {"erro": "Nao pode ser pendente enquanto houver atualizacao na redacao"}, 400
 
     sql = text("UPDATE redacoes SET titulo = :titulo, tema = :tema, texto = :texto, status = :status WHERE id = :id") 
