@@ -27,7 +27,7 @@ def criarRedacao():
     return dados
 
 @redacoes_bp.route('/getOne/<id>')
-def getOne(id):
+def getOne_redacoes(id):
 
     sql = text("SELECT * FROM redacoes WHERE id = :id")
     dados = {"id": id}
@@ -40,6 +40,24 @@ def getOne(id):
         return dict(linha)
     except Exception as e:
         return e
+
+@redacoes_bp.route('/getAll')
+def get_all_redacoes():
+    sql_query = text("SELECT * FROM redacoes") #LIMIT 100 OFFSET 100 para paginação
+    
+    try:
+        #result sem dados
+        result = db.session.execute(sql_query)
+                
+        relatorio = result.mappings().all()
+        json = [dict(row) for row in relatorio] #Gambi pq cada linha é um objeto
+
+        print(json)
+
+        return json
+    except Exception as e:
+        return e
+
 
 @redacoes_bp.route('/update/<id>', methods=["PUT"])
 def update(id):

@@ -8,18 +8,20 @@ avaliacao_bp = Blueprint('avaliacao', __name__, url_prefix = '/avaliacao')
 
 @avaliacao_bp.route('/create', methods=['POST'])
 def inserirAvaliacao():
-    #nota_final = request.form.get("nota_final")
+    nota_final = request.form.get("nota_final")
     id_redacao = request.form.get("id_redacao")
-    #comentario = request.form.get("comentario")
-    #data_avaliacao = request.form.get("data_avaliacao")
+    comentario = request.form.get("comentario")
+    data_avaliacao = request.form.get("data_avaliacao")
+    id_adm = request.form.get("id_adm")
 
-    if not id_redacao:
-        return "Informe a redação que está sendo avaliada!"
+    if not id_redacao or not id_adm:
+        return "Falha ao tentar identificar a redacao/avaliador."
 
-    sql = text("INSERT INTO avaliacao(nota_final, id_redacao, comentario, data_avaliacao) VALUES (:nota_final, :id_redacao, :comentario, :data_avaliacao)")
-    dados = { #"nota_final": nota_final, 
+    sql = text("INSERT INTO avaliacao(nota_final, id_redacao, comentario, data_avaliacao, id_adm) VALUES (:nota_final, :id_redacao, :comentario, :data_avaliacao, :id_adm)")
+    dados = { "nota_final": nota_final, 
         "id_redacao": id_redacao, 
-         #"comentario": comentario, "data_avaliacao": data_avaliacao
+         "comentario": comentario, "data_avaliacao": data_avaliacao,
+         "id_adm": id_adm
          }
 
     db.session.execute(sql, dados)
@@ -28,7 +30,7 @@ def inserirAvaliacao():
     return dados
 
 @avaliacao_bp.route('/getOne/<id>')
-def getOne(id):
+def getOne_avaliacao(id):
 
     sql = text("SELECT * FROM avaliacao WHERE id = :id")
     dados = {"id": id}
@@ -43,11 +45,22 @@ def getOne(id):
         return e
 
 
+@avaliacao_bp.route('/getAll')
+def get_all_avaliacao():
+    sql_query = text("SELECT * FROM avaliacao") #LIMIT 100 OFFSET 100 para paginação
+    
+    try:
+        #result sem dados
+        result = db.session.execute(sql_query)
+                
+        relatorio = result.mappings().all()
+        json = [dict(row) for row in relatorio] #Gambi pq cada linha é um objeto
 
+        print(json)
 
-#getALL
-
-
+        return json
+    except Exception as e:
+        return e
 
 
 @avaliacao_bp.route('/update/<id>', methods=["PUT"])
@@ -55,9 +68,11 @@ def update(id):
     nota_final = request.form.get("nota_final")
     comentario = request.form.get("comentario")
     data_avaliacao = request.form.get("data_avaliacao")
+    id_redacao = request.form.get("id_redacao")
+    id_adm = request.form.get("id_adm")
 
-    sql = text("UPDATE avaliacao SET nota_final = :nota_final, comentario = :comentario, data_avaliacao = :data_avaliacao WHERE id = :id") 
-    dados = {"nota_final": nota_final, "comentario": comentario, "data_avaliacao": data_avaliacao, "id": id}
+    sql = text("UPDATE avaliacao SET nota_final = :nota_final, comentario = :comentario, data_avaliacao = :data_avaliacao, id_redacao = :id_redacao, id_adm = :id_adm WHERE id = :id") 
+    dados = {"nota_final": nota_final, "comentario": comentario, "data_avaliacao": data_avaliacao, "id_redacao": id_redacao, "id_adm": id_adm, "id": id}
 
     result = db.session.execute(sql, dados)
 

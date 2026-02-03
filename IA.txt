@@ -90,3 +90,17 @@ A rota /dashboard/stats pega dados de:
 essay_grades.final_grade → média geral.
 essay_grades.graded_at ordenado → última nota.
 Se quiser, eu posso gerar o script SQL completo, incluindo criação de ENUMs, constraints e chaves estrangeiras. Quer que eu gere?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
