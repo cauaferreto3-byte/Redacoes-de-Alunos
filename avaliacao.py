@@ -126,25 +126,35 @@ def delete(id):
         db.session.rollback()
         return f"Só deus na causa"
 
-#@avaliacao_bp.route("/essays/<id>/grade", methods=["PUT"])
-#def corrigir_redacao(id):
+@avaliacao_bp.route("/dashboard/stats")
+def status():
+    #nota_final = request.form.get("nota_final")
+    id_aluno = request.form.get("id_aluno")    
 
- #   nota_final = request.form.get("nota_final")
-  #  id_redacao = request.form.get("id_redacao")
-   # comentario = request.form.get("comentario")
+    #sql = text("SELECT AVG(nota_final) as media_geral, MAX(nota_final) as ultima_nota FROM avaliacao a JOIN redacoes r ON a.id_redacao = r.id JOIN usuario u ON r.id_aluno = u.id JOIN curso c ON u.numero_curso = c.id WHERE r.id_aluno = :id_aluno;")
+    sql = text("SELECT AVG(nota_final) as media_geral, MAX(nota_final) as ultima_nota, u.numero_curso FROM avaliacao a JOIN redacoes r ON a.id_redacao = r.id JOIN usuario u ON r.id_aluno = u.id WHERE r.id_aluno = :id_aluno GROUP BY u.numero_curso;")
+    dados_avaliacao = { "id_aluno": id_aluno}
 
-    #sql = text("UPDATE avaliacao SET nota_final = :nota_final, comentario = :comentario WHERE id = :id AND id_redacao = :id_redacao")
-    #dados = {"id": id, "id_redacao": id_redacao, "nota_final": nota_final, "comentario": comentario}
+    resultado = db.session.execute(sql, dados_avaliacao).mappings().first()
+    
+    if resultado is None:
+        return {"erro": "Nenhuma avaliação encontrada para este aluno"}, 404
+    
+    numero_curso = resultado['numero_curso']
+    media_geral = resultado['media_geral']
+    ultima_nota = resultado['ultima_nota']
 
-    # result = db.session.execute(sql, dados)
+    sql_query = text("SELECT nota_corte FROM curso where id = :numero_curso")
+    dados_curso = {"numero_curso": numero_curso}
 
-    # linhas_afetadas = result.rowcount()
+    result = db.session.execute(sql_query, dados_curso).mappings().first()
 
-    #if linhas_afetadas == 1:
-      #db.session.commit()
-      #return "Sua redacao foi avaliada!"
-    #else:
-      #db.session.rollback()
-      #return "Falha ao resgatar a redacao e/ou a avaliacao!"
+    if result is None:
+        return {"erro": "Nenhum curso encontrado."}
 
-    #copia e cola, mas depois tem que pensar melhor.
+    if media_geral >= result['nota_corte']:
+        return {"ultima_nota": ultima_nota, "media_geral": media_geral, "mensagem": "Aprovado para cursar!"}
+    else:
+        return {"ultima_nota": ultima_nota, "media_geral": media_geral, "mensagem": "Quase lá!"}
+    
+    

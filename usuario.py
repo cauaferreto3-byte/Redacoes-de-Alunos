@@ -109,6 +109,12 @@ def login():
 def atualizar_foto(id):
     foto = request.form.get("foto")
 
+    # Verifica se o usuario com o id existe
+    exists_sql = text("SELECT 1 FROM usuario WHERE id = :id")
+    exists = db.session.execute(exists_sql, {"id": id}).first()
+    if not exists:
+        return {"erro": f"Usuario com id {id} não encontrado."}, 404
+
     entensao = ('jpg', 'png', 'jpeg', 'webp')
     if not foto or not foto.strip():
         return {"erro": "URL da foto nao encontrada ou corrompida."}, 400
@@ -128,6 +134,3 @@ def atualizar_foto(id):
     else:
         db.session.rollback()
         return f"problemas ao atualizar dados"
-
-
-
