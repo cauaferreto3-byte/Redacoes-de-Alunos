@@ -3,3 +3,4 @@ sqlalchemy
 psycopg2
 flask_sqlalchemy
 # rodar no terminal => pip install -r requirements.txt
+gunicorn==21.2.0
